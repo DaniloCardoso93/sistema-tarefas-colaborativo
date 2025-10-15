@@ -1,5 +1,6 @@
+// apps/auth-service/src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
@@ -11,23 +12,18 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
       envFilePath: './apps/auth-service/.env',
     }),
-
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule, UsersModule, AuthModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: 5432,
-        username: 'postgres',
-        password: 'password',
-        database: 'challenge_db',
-        entities: [User],
-        synchronize: false,
-      }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DATABASE_HOST,
+      port: 5432,
+      username: 'postgres',
+      password: 'password',
+      database: 'challenge_db',
+      entities: [User],
+      synchronize: false,
     }),
-
     UsersModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
