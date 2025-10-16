@@ -1,6 +1,6 @@
 // apps/auth-service/src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
@@ -10,17 +10,22 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: './apps/auth-service/.env',
+      envFilePath: '../../.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DATABASE_HOST,
-      port: 5432,
-      username: 'postgres',
-      password: 'password',
-      database: 'challenge_db',
-      entities: [User],
-      synchronize: false,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DATABASE_HOST', 'db'),
+        port: 5432,
+        username: 'postgres',
+        password: 'password',
+        database: 'challenge_db',
+        entities: [User],
+        autoLoadEntities: true,
+        synchronize: false,
+      }),
     }),
     UsersModule,
     AuthModule,

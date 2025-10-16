@@ -12,7 +12,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(payload);
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: 'SEU_SEGREDO_SUPER_SECRETO_DO_REFRESH_TOKEN', // NAO ESQUECER DE MOVER PARA .ENV
+      secret: 'SEU_SEGREDO_SUPER_SECRETO_DO_REFRESH_TOKEN',
       expiresIn: '7d',
     });
 
