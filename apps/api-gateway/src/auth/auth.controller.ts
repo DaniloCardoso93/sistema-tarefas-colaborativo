@@ -6,6 +6,9 @@ import {
   OnModuleInit,
   ValidationPipe,
   Logger,
+  UseGuards,
+  Request,
+  Get,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
@@ -13,6 +16,15 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { LoginDto } from './dtos/login.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { LoginResponseDto } from './dtos/login-response.dto';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { NewAccessTokenDto } from './dtos/new-access-token.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { Request as Req } from 'express';
+import { UserFromJwt } from 'src/auth/strategies/jwt.strategy';
+
+interface RequestWithUser extends Req {
+  user: UserFromJwt;
+}
 
 @Controller('/api/auth')
 export class AuthController implements OnModuleInit {
@@ -47,5 +59,20 @@ export class AuthController implements OnModuleInit {
         loginDto,
       ),
     );
+  }
+
+  @Post('refresh')
+  async refresh(
+    @Body(new ValidationPipe()) refreshTokenDto: RefreshTokenDto,
+  ): Promise<NewAccessTokenDto> {
+    return await lastValueFrom(
+      this.authClient.send<NewAccessTokenDto>('refresh_token', refreshTokenDto),
+    );
+  }
+
+  @Get('profile')
+  @UseGuards(AuthGuard('jwt'))
+  getProfile(@Request() req: RequestWithUser) {
+    return req.user;
   }
 }

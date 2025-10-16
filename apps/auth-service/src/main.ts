@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { HttpExceptionFilter } from './http-exception.filter';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -21,6 +22,7 @@ async function bootstrap() {
       },
     },
   );
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen();
   console.log('Auth microservice is listening for messages...');
