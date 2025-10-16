@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { LoginDto } from '../users/dtos/login.dto';
+import { RefreshTokenDto } from 'src/users/dtos/refresh-token.dto';
 
 @Controller()
 export class AuthController {
@@ -48,6 +49,19 @@ export class AuthController {
         this.logger.error(
           `Login failed for ${loginDto.email} with an unknown error.`,
         );
+      }
+      throw error;
+    }
+  }
+
+  @MessagePattern('refresh_token')
+  async handleRefreshToken(@Payload() { refreshToken }: RefreshTokenDto) {
+    this.logger.log('Refresh token attempt received');
+    try {
+      return await this.authService.refreshToken(refreshToken);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Refresh token failed: ${error.message}`);
       }
       throw error;
     }

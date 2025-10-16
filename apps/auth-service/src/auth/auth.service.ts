@@ -5,19 +5,17 @@ import { UsersService } from 'src/users/users.service';
 import { LoginDto } from 'src/users/dtos/login.dto';
 import * as bcrypt from 'bcrypt';
 
+interface JwtPayload {
+  username: string;
+  sub: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
-
-  /**
-   * Valida um usuário comparando a senha enviada com o hash salvo.
-   * @param loginDto - Dados de email e senha.
-   * @returns O objeto do usuário se a validação for bem-sucedida.
-   * @throws UnauthorizedException se o usuário não for encontrado ou a senha estiver incorreta.
-   */
 
   async validateUser(loginDto: LoginDto): Promise<User> {
     const user = await this.usersService.findByEmail(loginDto.email);
@@ -28,11 +26,6 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  /**
-   * Realiza o login, valida o usuário e gera os tokens.
-   * @param loginDto - Dados de email e senha.
-   * @returns Um objeto com accessToken e refreshToken.
-   */
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto);
     return this.generateTokens(user);
@@ -52,5 +45,28 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
+        refreshToken,
+        {
+          secret: process.env.JWT_REFRESH_SECRET,
+        },
+      );
+
+      const user = await this.usersService.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const newPayload = { username: user.username, sub: user.id };
+      const accessToken = await this.jwtService.signAsync(newPayload);
+
+      return { accessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }
