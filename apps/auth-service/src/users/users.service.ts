@@ -39,4 +39,8 @@ export class UsersService {
     const { password_hash: _, ...result } = savedUser;
     return result;
   }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
 }
