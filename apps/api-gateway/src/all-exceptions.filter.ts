@@ -13,29 +13,46 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | object = 'Internal Server Error';
-
     if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      message = exception.getResponse();
-    } else if (
-      typeof exception === 'object' &&
-      exception !== null &&
-      'error' in exception
-    ) {
-      const rpcError = exception.error as {
-        status: number;
-        message: string | object;
-      };
-      status = typeof rpcError.status === 'number' ? rpcError.status : status;
-      message = rpcError.message || message;
+      const status = exception.getStatus();
+      const message = exception.getResponse();
+      response
+        .status(status)
+        .json(
+          typeof message === 'object'
+            ? message
+            : { statusCode: status, message },
+        );
+      return;
     }
 
-    response
-      .status(status)
-      .json(
-        typeof message === 'object' ? message : { statusCode: status, message },
-      );
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: unknown = 'Internal Server Error';
+
+    if (typeof exception === 'object' && exception !== null) {
+      const rpcError = exception as Record<string, unknown>;
+
+      if (typeof rpcError.error === 'object' && rpcError.error !== null) {
+        const nestedError = rpcError.error as Record<string, unknown>;
+        if (typeof nestedError.status === 'number') {
+          status = nestedError.status;
+        }
+        if ('message' in nestedError) {
+          message = nestedError.message;
+        }
+      } else {
+        if (typeof rpcError.status === 'number') {
+          status = rpcError.status;
+        }
+        if ('message' in rpcError) {
+          message = rpcError.message;
+        }
+      }
+    }
+
+    response.status(status).json({
+      statusCode: status,
+      message,
+    });
   }
 }
