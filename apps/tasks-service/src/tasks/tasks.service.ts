@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
+import { ClientProxy } from '@nestjs/microservices';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 
@@ -10,11 +11,15 @@ export class TasksService {
   constructor(
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,
+    @Inject('NOTIFICATIONS_SERVICE')
+    private notificationsClient: ClientProxy,
   ) {}
 
-  create(createTaskDto: CreateTaskDto): Promise<Task> {
+  async create(createTaskDto: CreateTaskDto): Promise<Task> {
     const task = this.tasksRepository.create(createTaskDto);
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+    this.notificationsClient.emit('task_created', savedTask);
+    return savedTask;
   }
 
   findAll(): Promise<Task[]> {
@@ -37,7 +42,9 @@ export class TasksService {
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
-    return this.tasksRepository.save(task);
+    const updatedTask = await this.tasksRepository.save(task);
+    this.notificationsClient.emit('task_updated', updatedTask);
+    return updatedTask;
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
