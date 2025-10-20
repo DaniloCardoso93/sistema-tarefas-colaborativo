@@ -10,6 +10,15 @@ import { TaskTable } from "@/components/tasks/task-table";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import { socket } from "@/lib/socket";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { taskPriorityEnum, taskStatusEnum } from "@/lib/schemas";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -21,18 +30,45 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardComponent,
 });
 
+const translateStatus = (status: string) => {
+  const map = {
+    TODO: "A Fazer",
+    IN_PROGRESS: "Em Progresso",
+    REVIEW: "Em Revisão",
+    DONE: "Concluída",
+  };
+  return map[status as keyof typeof map] || status;
+};
+
+const translatePriority = (priority: string) => {
+  const map = {
+    LOW: "Baixa",
+    MEDIUM: "Média",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+  };
+  return map[priority as keyof typeof map] || priority;
+};
+
 function DashboardComponent() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
 
   React.useEffect(() => {
     async function fetchTasks() {
       try {
         setIsLoading(true);
-        const response = await api.get<Task[]>("/api/tasks");
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.append("status", statusFilter);
+        if (priorityFilter !== "all") params.append("priority", priorityFilter);
+        const response = await api.get<Task[]>(
+          `/api/tasks?${params.toString()}`
+        );
         setTasks(response.data);
       } catch (error) {
         console.error("Failed to fetch tasks", error);
@@ -68,15 +104,16 @@ function DashboardComponent() {
       socket.off("updated_task");
       socket.disconnect();
     };
-  }, []);
+  }, [statusFilter, priorityFilter]);
 
   function handleLogout() {
     logout();
     navigate({ to: "/login" });
   }
 
-  function handleTaskCreated() {
+  function handleTaskCreated(newTask: Task) {
     setIsModalOpen(false);
+    setTasks((currentTasks) => [newTask, ...currentTasks]);
   }
 
   return (
@@ -89,18 +126,64 @@ function DashboardComponent() {
       </header>
 
       <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
           <h2 className="text-2xl font-bold">Meu Dashboard de Tarefas</h2>
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Criar Nova Tarefa
-          </Button>
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrar por status..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                {taskStatusEnum.options.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {translateStatus(status)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrar por prioridade..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Prioridades</SelectItem>
+                {taskPriorityEnum.options.map((priority) => (
+                  <SelectItem key={priority} value={priority}>
+                    {translatePriority(priority)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Nova Tarefa
+            </Button>
+          </div>
         </div>
+
         {isLoading ? (
-          <p>Carregando tarefas...</p>
+          <div className="rounded-md border">
+            <div className="p-4">
+              <Skeleton className="h-6 w-1/4" />
+            </div>
+            <div className="p-4">
+              <Skeleton className="h-8 w-full" />
+            </div>
+            <div className="p-4">
+              <Skeleton className="h-8 w-full" />
+            </div>
+          </div>
         ) : (
           <TaskTable columns={columns} data={tasks} />
         )}
+
         <CreateTaskModal
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}

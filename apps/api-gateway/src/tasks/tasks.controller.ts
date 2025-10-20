@@ -10,6 +10,7 @@ import {
   UseGuards,
   ValidationPipe,
   Request,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
@@ -17,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 import { UserFromJwt } from '../auth/strategies/jwt.strategy';
+import { QueryTaskDto } from './dtos/query-task.dto';
 
 interface RequestWithUser extends Request {
   user: UserFromJwt;
@@ -43,10 +45,17 @@ export class TasksController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  findAll(@Request() req: RequestWithUser) {
-    return lastValueFrom(
-      this.tasksClient.send('find_all_tasks', { userId: req.user.userId }),
-    );
+  findAll(
+    @Request() req: RequestWithUser,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: QueryTaskDto,
+  ) {
+    const payload = {
+      userId: req.user.userId,
+      status: query.status,
+      priority: query.priority,
+    };
+    return lastValueFrom(this.tasksClient.send('find_all_tasks', payload));
   }
 
   @Get(':id')

@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Task } from './entities/task.entity';
+import { FindManyOptions, Repository } from 'typeorm';
+import { Task, TaskPriority, TaskStatus } from './entities/task.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
@@ -24,9 +24,25 @@ export class TasksService {
     return savedTask;
   }
 
-  findAll(userId: string): Promise<Task[]> {
+  findAll(
+    userId: string,
+    status?: TaskStatus,
+    priority?: TaskPriority,
+  ): Promise<Task[]> {
+    const whereOptions: FindManyOptions<Task>['where'] = {
+      userId: userId,
+    };
+    if (status) {
+      whereOptions.status = status;
+    }
+    if (priority) {
+      whereOptions.priority = priority;
+    }
     return this.tasksRepository.find({
-      where: { userId: userId },
+      where: whereOptions,
+      order: {
+        created_at: 'DESC',
+      },
     });
   }
 
