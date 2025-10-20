@@ -1,135 +1,87 @@
-# Turborepo starter
+# Jungle Gaming - Desafio Full-stack (Sistema de Tarefas)
 
-This Turborepo starter is maintained by the Turborepo core team.
+Este é um sistema de gerenciamento de tarefas colaborativo construído como parte do desafio técnico para a vaga de Desenvolvedor Júnior Full-stack na Jungle Gaming.
 
-## Using this example
+O projeto utiliza uma arquitetura de microserviços robusta, comunicação em tempo real com WebSockets e uma interface moderna e reativa construída com React e Tailwind CSS.
 
-Run the following command:
+## Stack de Tecnologias
 
-```sh
-npx create-turbo@latest
+### Back-end
+
+- **Node.js** com **NestJS** (TypeScript)
+- **Arquitetura:** Microserviços
+- **Banco de Dados:** PostgreSQL (com TypeORM)
+- **Mensageria:** RabbitMQ (para comunicação assíncrona entre serviços)
+- **Autenticação:** JWT (Access Tokens + Refresh Tokens) com Passport.js
+- **Tempo Real:** WebSockets (Socket.io)
+- **Containerização:** Docker e Docker Compose
+
+### Front-end
+
+- **React** (com Vite)
+- **TypeScript**
+- **UI:** Tailwind CSS + `shadcn/ui`
+- **Roteamento:** TanStack Router
+- **Gerenciamento de Estado:** Zustand
+- **Formulários:** React Hook Form + Zod (para validação)
+- **Cliente HTTP:** Axios
+
+### Monorepo
+
+- **Turborepo** (para gerenciamento do monorepo)
+- **Yarn Workspaces** (para gerenciamento de pacotes)
+
+## Arquitetura de Microserviços
+
+O sistema é dividido em 5 serviços independentes que se comunicam via RabbitMQ:
+
+1.  **API Gateway (`api-gateway`):** A porta de entrada pública. Recebe todas as requisições HTTP, valida a autenticação (JWT) e encaminha as solicitações para os serviços corretos.
+2.  **Serviço de Autenticação (`auth-service`):** Responsável por gerenciar usuários, criptografar senhas (bcrypt), gerar e validar tokens JWT.
+3.  **Serviço de Tarefas (`tasks-service`):** Responsável por toda a lógica de negócio (CRUD) de tarefas, comentários e logs de auditoria. Publica eventos (ex: `task_created`) no RabbitMQ.
+4.  **Serviço de Notificações (`notifications-service`):** Ouve os eventos do RabbitMQ (ex: `task_created`) e os retransmite em tempo real para o front-end via WebSockets.
+5.  **Aplicação Web (`web`):** A interface do usuário (SPA) construída em React.
+
+## Como Executar o Projeto
+
+### Pré-requisitos
+
+- Node.js (v20+)
+- Yarn (v4+)
+- Docker e Docker Compose
+- DBeaver ou outro cliente de banco de dados
+
+### 1. Configuração Inicial
+
+1.  **Clone o repositório:**
+
+    ```bash
+    git clone https://github.com/DaniloCardoso93/sistema-tarefas-colaborativo.git
+    cd [NOME_DA_PASTA]
+    ```
+
+2.  **Crie o arquivo de ambiente:**
+    Na raiz do projeto, crie um arquivo `.env` e cole o seguinte conteúdo:
+
+    ```
+    # Variáveis do Auth Service
+    DATABASE_HOST=localhost
+    RABBITMQ_URL=amqp://admin:admin@localhost:5672
+
+    # Variáveis do API Gateway
+    GATEWAY_PORT=3001
+    JWT_ACCESS_SECRET=SEU_SEGREDO_SUPER_SECRETO_DO_ACCESS_TOKEN
+    JWT_REFRESH_SECRET=SEU_SEGREDO_SUPER_SECRETO_DO_REFRESH_TOKEN
+    ```
+
+3.  **Instale as dependências:**
+    ```bash
+    yarn install
+    ```
+
+### 2. Rodando o Banco de Dados e o RabbitMQ (Docker)
+
+Inicie os serviços de infraestrutura em segundo plano:
+
+```bash
+docker-compose up -d
 ```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

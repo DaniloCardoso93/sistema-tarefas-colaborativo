@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { taskPriorityEnum, taskStatusEnum } from "@/lib/schemas";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TaskTableSkeleton } from "@/components/tasks/task-table-skeleton";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -111,9 +111,8 @@ function DashboardComponent() {
     navigate({ to: "/login" });
   }
 
-  function handleTaskCreated(newTask: Task) {
+  function handleTaskCreated() {
     setIsModalOpen(false);
-    setTasks((currentTasks) => [newTask, ...currentTasks]);
   }
 
   return (
@@ -169,17 +168,7 @@ function DashboardComponent() {
         </div>
 
         {isLoading ? (
-          <div className="rounded-md border">
-            <div className="p-4">
-              <Skeleton className="h-6 w-1/4" />
-            </div>
-            <div className="p-4">
-              <Skeleton className="h-8 w-full" />
-            </div>
-            <div className="p-4">
-              <Skeleton className="h-8 w-full" />
-            </div>
-          </div>
+          <TaskTableSkeleton />
         ) : (
           <TaskTable columns={columns} data={tasks} />
         )}
