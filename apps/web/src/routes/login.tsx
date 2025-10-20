@@ -24,15 +24,22 @@ import { Input } from "@/components/ui/input";
 import { loginSchema } from "@/lib/schemas";
 import { api } from "@/lib/api";
 import { isAxiosError } from "axios";
+import { useAuthStore } from "@/lib/store";
+import { redirect } from "@tanstack/react-router";
+import { checkAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: async () => {
+    const { isAuthenticated } = await checkAuth();
+    if (isAuthenticated) throw redirect({ to: "/dashboard" });
+  },
   component: LoginComponent,
 });
 
 function LoginComponent() {
   const navigate = useNavigate();
+  const { login } = useAuthStore();
 
-  // 1. Define o formulário
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,8 +50,11 @@ function LoginComponent() {
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     try {
-      const response = await api.post("/api/auth/login", values);
-      console.log(response.data);
+      const response = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+      }>("/api/auth/login", values);
+      login(response.data);
       toast.success("Login realizado com sucesso!");
       navigate({ to: "/" });
     } catch (error) {

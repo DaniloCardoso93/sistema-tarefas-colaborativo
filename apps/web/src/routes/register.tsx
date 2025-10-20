@@ -24,8 +24,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { registerSchema } from "@/lib/schemas";
 import { api } from "@/lib/api";
+import { redirect } from "@tanstack/react-router";
+import { checkAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/register")({
+  beforeLoad: async () => {
+    const { isAuthenticated } = await checkAuth();
+    if (isAuthenticated) throw redirect({ to: "/dashboard" });
+  },
   component: RegisterComponent,
 });
 
