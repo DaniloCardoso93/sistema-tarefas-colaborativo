@@ -1,4 +1,3 @@
-// apps/web/src/lib/socket.ts
 import { io } from "socket.io-client";
 
 const URL = "http://localhost:3003";
