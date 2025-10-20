@@ -43,6 +43,9 @@ export class Task {
   @Column({ nullable: true })
   due_date: Date;
 
+  @Column()
+  userId: string;
+
   @OneToMany(() => Comment, (comment) => comment.task)
   comments: Comment[];
 

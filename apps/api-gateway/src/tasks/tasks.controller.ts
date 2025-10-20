@@ -9,12 +9,20 @@ import {
   Inject,
   UseGuards,
   ValidationPipe,
+  Request,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
+import { UserFromJwt } from '../auth/strategies/jwt.strategy';
+import { QueryTaskDto } from './dtos/query-task.dto';
+
+interface RequestWithUser extends Request {
+  user: UserFromJwt;
+}
 
 @Controller('/api/tasks')
 export class TasksController {
@@ -24,14 +32,30 @@ export class TasksController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  create(@Body(new ValidationPipe()) createTaskDto: CreateTaskDto) {
-    return lastValueFrom(this.tasksClient.send('create_task', createTaskDto));
+  create(
+    @Request() req: RequestWithUser,
+    @Body(new ValidationPipe()) createTaskDto: CreateTaskDto,
+  ) {
+    const payload = {
+      ...createTaskDto,
+      userId: req.user.userId,
+    };
+    return lastValueFrom(this.tasksClient.send('create_task', payload));
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  findAll() {
-    return lastValueFrom(this.tasksClient.send('find_all_tasks', {}));
+  findAll(
+    @Request() req: RequestWithUser,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: QueryTaskDto,
+  ) {
+    const payload = {
+      userId: req.user.userId,
+      status: query.status,
+      priority: query.priority,
+    };
+    return lastValueFrom(this.tasksClient.send('find_all_tasks', payload));
   }
 
   @Get(':id')

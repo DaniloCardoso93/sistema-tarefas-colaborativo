@@ -3,19 +3,27 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
+import { TaskPriority, TaskStatus } from './entities/task.entity';
+
+interface FindAllTasksPayload {
+  userId: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+}
 
 @Controller()
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @MessagePattern('create_task')
-  create(@Payload() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(@Payload() data: CreateTaskDto & { userId: string }) {
+    return this.tasksService.create(data);
   }
 
   @MessagePattern('find_all_tasks')
-  findAll() {
-    return this.tasksService.findAll();
+  findAll(@Payload() data: FindAllTasksPayload) {
+    const { userId, status, priority } = data;
+    return this.tasksService.findAll(userId, status, priority);
   }
 
   @MessagePattern('find_one_task')
