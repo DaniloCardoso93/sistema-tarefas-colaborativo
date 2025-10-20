@@ -15,15 +15,19 @@ export class TasksService {
     private notificationsClient: ClientProxy,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const task = this.tasksRepository.create(createTaskDto);
+  async create(
+    createTaskPayload: CreateTaskDto & { userId: string },
+  ): Promise<Task> {
+    const task = this.tasksRepository.create(createTaskPayload);
     const savedTask = await this.tasksRepository.save(task);
     this.notificationsClient.emit('task_created', savedTask);
     return savedTask;
   }
 
-  findAll(): Promise<Task[]> {
-    return this.tasksRepository.find();
+  findAll(userId: string): Promise<Task[]> {
+    return this.tasksRepository.find({
+      where: { userId: userId },
+    });
   }
 
   async findOne(id: string): Promise<Task> {

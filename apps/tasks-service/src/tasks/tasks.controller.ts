@@ -9,13 +9,13 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @MessagePattern('create_task')
-  create(@Payload() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(@Payload() data: CreateTaskDto & { userId: string }) {
+    return this.tasksService.create(data);
   }
 
   @MessagePattern('find_all_tasks')
-  findAll() {
-    return this.tasksService.findAll();
+  findAll(@Payload() data: { userId: string }) {
+    return this.tasksService.findAll(data.userId);
   }
 
   @MessagePattern('find_one_task')

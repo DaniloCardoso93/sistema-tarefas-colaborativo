@@ -11,6 +11,6 @@ export default new DataSource({
   username: 'postgres',
   password: 'password',
   database: 'challenge_db',
-  entities: [__dirname + '/../**/*.entity.ts'],
+  entities: [__dirname + '/../../**/*.entity.ts'],
   migrations: [__dirname + '/migrations/*.ts'],
 });

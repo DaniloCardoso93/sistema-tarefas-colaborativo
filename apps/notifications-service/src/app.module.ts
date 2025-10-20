@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationsController } from './notifications.controller';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Module({
   imports: [
@@ -10,6 +11,6 @@ import { NotificationsController } from './notifications.controller';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [],
+  providers: [NotificationsGateway],
 })
 export class AppModule {}
