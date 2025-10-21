@@ -1,24 +1,13 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
-
-export enum TaskPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
-
-export enum TaskStatus {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  REVIEW = 'REVIEW',
-  DONE = 'DONE',
-}
+import { TaskPriority, TaskStatus } from './task-enums';
 
 export class CreateTaskDto {
   @IsString()
@@ -36,6 +25,11 @@ export class CreateTaskDto {
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority;
+
+  @IsArray()
+  @IsUUID('all', { each: true })
+  @IsOptional()
+  assigneeIds?: string[];
 
   @IsDateString()
   @IsOptional()

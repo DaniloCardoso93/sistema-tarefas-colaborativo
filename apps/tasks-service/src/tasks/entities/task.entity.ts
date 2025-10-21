@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Comment } from './comment.entity';
 import { AuditLog } from './audit-log.entity';
+import { TaskAssignee } from './task-assignee.entity';
 
 export enum TaskPriority {
   LOW = 'LOW',
@@ -45,6 +46,9 @@ export class Task {
 
   @Column()
   userId: string;
+
+  @OneToMany(() => TaskAssignee, (assignee) => assignee.task)
+  assignees: TaskAssignee[];
 
   @OneToMany(() => Comment, (comment) => comment.task)
   comments: Comment[];
