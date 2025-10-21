@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/select";
 import { taskPriorityEnum, taskStatusEnum } from "@/lib/schemas";
 import { TaskTableSkeleton } from "@/components/tasks/task-table-skeleton";
+import { EditTaskModal } from "@/components/tasks/edit-task-modal";
+import { DeleteTaskAlert } from "@/components/tasks/delete-task-alert";
+import { TaskDetailsModal } from "@/components/tasks/task-details-modal";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -51,7 +54,7 @@ const translatePriority = (priority: string) => {
 };
 
 function DashboardComponent() {
-  const { logout } = useAuthStore();
+  const { logout, closeModals } = useAuthStore();
   const navigate = useNavigate();
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -59,52 +62,50 @@ function DashboardComponent() {
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
 
-  React.useEffect(() => {
-    async function fetchTasks() {
-      try {
-        setIsLoading(true);
-        const params = new URLSearchParams();
-        if (statusFilter !== "all") params.append("status", statusFilter);
-        if (priorityFilter !== "all") params.append("priority", priorityFilter);
-        const response = await api.get<Task[]>(
-          `/api/tasks?${params.toString()}`
-        );
-        setTasks(response.data);
-      } catch (error) {
-        console.error("Failed to fetch tasks", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchTasks = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (priorityFilter !== "all") params.append("priority", priorityFilter);
+      const response = await api.get<Task[]>(`/api/tasks?${params.toString()}`);
+      setTasks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tasks", error);
+    } finally {
+      setIsLoading(false);
     }
-    fetchTasks();
+  }, [statusFilter, priorityFilter]);
 
+  React.useEffect(() => {
+    fetchTasks();
     socket.connect();
 
-    socket.on("new_task", (newTask: Task) => {
-      console.log("Recebeu um evento new_task!", newTask);
-      toast.success("Nova Tarefa Recebida!", {
-        description: newTask.title,
-      });
-      setTasks((currentTasks) => [newTask, ...currentTasks]);
-    });
-    socket.on("updated_task", (updatedTask: Task) => {
-      console.log("Recebeu um evento updated_task!", updatedTask);
-      toast.info("Tarefa Atualizada!", {
-        description: updatedTask.title,
-      });
-      setTasks((currentTasks) =>
-        currentTasks.map((task) =>
-          task.id === updatedTask.id ? updatedTask : task
-        )
-      );
-    });
+    const onNewTask = (newTask: Task) => {
+      toast.success("Nova Tarefa Recebida!", { description: newTask.title });
+      fetchTasks();
+    };
+    const onUpdateTask = (updatedTask: Task) => {
+      toast.info("Tarefa Atualizada!", { description: updatedTask.title });
+      fetchTasks();
+    };
+    const onDeleteTask = (deletedTask: { id: string }) => {
+      toast.error("Uma tarefa foi excluída.");
+      setTasks((current) => current.filter((t) => t.id !== deletedTask.id));
+    };
+
+    socket.on("new_task", onNewTask);
+    socket.on("updated_task", onUpdateTask);
+    socket.on("task_deleted", onDeleteTask);
 
     return () => {
-      socket.off("new_task");
-      socket.off("updated_task");
+      socket.off("new_task", onNewTask);
+      socket.off("updated_task", onUpdateTask);
+      socket.off("task_deleted", onDeleteTask);
       socket.disconnect();
+      closeModals();
     };
-  }, [statusFilter, priorityFilter]);
+  }, [fetchTasks, closeModals]);
 
   function handleLogout() {
     logout();
@@ -113,6 +114,7 @@ function DashboardComponent() {
 
   function handleTaskCreated() {
     setIsModalOpen(false);
+    fetchTasks();
   }
 
   return (
@@ -178,6 +180,9 @@ function DashboardComponent() {
           onOpenChange={setIsModalOpen}
           onTaskCreated={handleTaskCreated}
         />
+        <EditTaskModal />
+        <DeleteTaskAlert />
+        <TaskDetailsModal />
       </main>
     </div>
   );

@@ -8,6 +8,7 @@ import { Task } from './entities/task.entity';
 import { Comment } from './entities/comment.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { CommentsService } from './comments.service';
+import { CommentsController } from './comments.controller';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { CommentsService } from './comments.service';
       },
     ]),
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, CommentsController],
   providers: [TasksService, CommentsService],
   exports: [TasksService, CommentsService],
 })
