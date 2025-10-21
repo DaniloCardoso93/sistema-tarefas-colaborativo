@@ -108,6 +108,7 @@ export class TasksService {
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
+    console.log(task);
     await this.tasksRepository.delete(id);
     this.notificationsClient.emit('task_deleted', {
       id: task.id,

@@ -90,7 +90,7 @@ function DashboardComponent() {
       fetchTasks();
     };
     const onDeleteTask = (deletedTask: { id: string }) => {
-      toast.error("Uma tarefa foi excluída.");
+      // toast.error("Uma tarefa foi excluída.");
       setTasks((current) => current.filter((t) => t.id !== deletedTask.id));
     };
 

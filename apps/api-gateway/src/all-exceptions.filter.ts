@@ -7,6 +7,11 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 
+interface RpcError {
+  status: number;
+  message: string | object;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
@@ -27,24 +32,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: unknown = 'Internal Server Error';
+    let message: string | object = 'Internal Server Error';
 
     if (typeof exception === 'object' && exception !== null) {
       const rpcError = exception as Record<string, unknown>;
 
       if (typeof rpcError.error === 'object' && rpcError.error !== null) {
-        const nestedError = rpcError.error as Record<string, unknown>;
+        const nestedError = rpcError.error as RpcError;
         if (typeof nestedError.status === 'number') {
           status = nestedError.status;
         }
-        if ('message' in nestedError) {
+        if (nestedError.message) {
           message = nestedError.message;
         }
-      } else {
+      } else if ('status' in rpcError && 'message' in rpcError) {
         if (typeof rpcError.status === 'number') {
           status = rpcError.status;
         }
-        if ('message' in rpcError) {
+        if (rpcError.message) {
           message = rpcError.message;
         }
       }
