@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dtos/create-task.dto';
@@ -11,8 +11,15 @@ interface FindAllTasksPayload {
   priority?: TaskPriority;
 }
 
+interface UpdateTaskPayload {
+  id: string;
+  userId: string;
+  updateTaskDto: UpdateTaskDto;
+}
+
 @Controller()
 export class TasksController {
+  private readonly logger = new Logger(TasksController.name);
   constructor(private readonly tasksService: TasksService) {}
 
   @MessagePattern('create_task')
@@ -32,12 +39,18 @@ export class TasksController {
   }
 
   @MessagePattern('update_task')
-  update(@Payload() data: { id: string; updateTaskDto: UpdateTaskDto }) {
-    return this.tasksService.update(data.id, data.updateTaskDto);
+  update(@Payload() data: UpdateTaskPayload) {
+    return this.tasksService.update(data.id, data.updateTaskDto, data.userId);
   }
 
   @MessagePattern('remove_task')
   remove(@Payload() id: string) {
     return this.tasksService.remove(id);
+  }
+
+  @MessagePattern('find_task_history')
+  findHistory(@Payload() taskId: string) {
+    this.logger.log(`Received find_task_history message for task: ${taskId}`);
+    return this.tasksService.findHistory(taskId);
   }
 }

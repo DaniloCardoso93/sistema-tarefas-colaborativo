@@ -5,12 +5,15 @@ import { Task, TaskPriority, TaskStatus } from './entities/task.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
+import { AuditLog } from './entities/audit-log.entity';
 
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,
+    @InjectRepository(AuditLog)
+    private auditLogRepository: Repository<AuditLog>,
     @Inject('NOTIFICATIONS_SERVICE')
     private notificationsClient: ClientProxy,
   ) {}
@@ -54,7 +57,12 @@ export class TasksService {
     return task;
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
+  async update(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+    userId: string,
+  ): Promise<Task> {
+    const oldTask = await this.findOne(id);
     const task = await this.tasksRepository.preload({
       id,
       ...updateTaskDto,
@@ -63,8 +71,36 @@ export class TasksService {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
     const updatedTask = await this.tasksRepository.save(task);
+    await this.createAuditLogs(oldTask, updatedTask, userId);
     this.notificationsClient.emit('task_updated', updatedTask);
     return updatedTask;
+  }
+
+  private async createAuditLogs(oldTask: Task, newTask: Task, userId: string) {
+    const logs: AuditLog[] = [];
+    if (oldTask.status !== newTask.status) {
+      logs.push(
+        this.auditLogRepository.create({
+          taskId: newTask.id,
+          userId: userId,
+          action: 'STATUS_CHANGE',
+          details: { oldValue: oldTask.status, newValue: newTask.status },
+        }),
+      );
+    }
+    if (oldTask.priority !== newTask.priority) {
+      logs.push(
+        this.auditLogRepository.create({
+          taskId: newTask.id,
+          userId: userId,
+          action: 'PRIORITY_CHANGE',
+          details: { oldValue: oldTask.priority, newValue: newTask.priority },
+        }),
+      );
+    }
+    if (logs.length > 0) {
+      await this.auditLogRepository.save(logs);
+    }
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
@@ -79,5 +115,16 @@ export class TasksService {
     });
 
     return { deleted: true };
+  }
+
+  async findHistory(taskId: string): Promise<AuditLog[]> {
+    await this.findOne(taskId);
+
+    return this.auditLogRepository.find({
+      where: { taskId },
+      order: {
+        timestamp: 'DESC',
+      },
+    });
   }
 }
