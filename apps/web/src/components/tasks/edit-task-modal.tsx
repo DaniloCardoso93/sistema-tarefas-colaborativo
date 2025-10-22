@@ -36,8 +36,9 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store";
 import React from "react";
+import { UserMultiSelect } from "./user-multi-select";
+import { type Assignee } from "./task-columns";
 
-// Funções para "traduzir" os valores
 const translateStatus = (status: string) => {
   const map = {
     TODO: "A Fazer",
@@ -63,6 +64,9 @@ export function EditTaskModal() {
 
   const form = useForm<z.infer<typeof createTaskSchema>>({
     resolver: zodResolver(createTaskSchema),
+    defaultValues: {
+      assigneeIds: [],
+    },
   });
 
   React.useEffect(() => {
@@ -72,6 +76,7 @@ export function EditTaskModal() {
         description: selectedTask.description || "",
         priority: selectedTask.priority,
         status: selectedTask.status,
+        assigneeIds: selectedTask.assignees.map((a: Assignee) => a.userId),
       });
     }
   }, [selectedTask, form, isEditModalOpen]);
@@ -173,6 +178,22 @@ export function EditTaskModal() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="assigneeIds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuir a</FormLabel>
+                  <FormControl>
+                    <UserMultiSelect
+                      selectedUserIds={field.value || []}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

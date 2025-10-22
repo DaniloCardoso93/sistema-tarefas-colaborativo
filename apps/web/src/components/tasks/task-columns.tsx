@@ -12,6 +12,7 @@ export type Task = {
   status: "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE";
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   created_at: string;
+  assignees: Assignee[];
 };
 
 export type Comment = {
@@ -20,6 +21,12 @@ export type Comment = {
   userId: string;
   taskId: string;
   created_at: Date;
+};
+
+export type Assignee = {
+  id: string;
+  taskId: string;
+  userId: string;
 };
 
 export const columns: ColumnDef<Task>[] = [

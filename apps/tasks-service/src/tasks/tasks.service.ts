@@ -85,18 +85,32 @@ export class TasksService {
     updateTaskDto: UpdateTaskDto,
     userId: string,
   ): Promise<Task> {
+    const { assigneeIds, ...taskData } = updateTaskDto;
     const oldTask = await this.findOne(id);
     const task = await this.tasksRepository.preload({
       id,
-      ...updateTaskDto,
+      ...taskData,
     });
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
     const updatedTask = await this.tasksRepository.save(task);
+    if (assigneeIds !== undefined) {
+      await this.assigneesRepository.delete({ taskId: id });
+      if (assigneeIds.length > 0) {
+        const assignees = assigneeIds.map((assigneeUserId) =>
+          this.assigneesRepository.create({
+            taskId: id,
+            userId: assigneeUserId,
+          }),
+        );
+        await this.assigneesRepository.save(assignees);
+      }
+    }
     await this.createAuditLogs(oldTask, updatedTask, userId);
-    this.notificationsClient.emit('task_updated', updatedTask);
-    return updatedTask;
+    const taskWithRelations = await this.findOne(id);
+    this.notificationsClient.emit('task_updated', taskWithRelations);
+    return taskWithRelations;
   }
 
   private async createAuditLogs(oldTask: Task, newTask: Task, userId: string) {

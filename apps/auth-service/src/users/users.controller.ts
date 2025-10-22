@@ -10,4 +10,9 @@ export class UsersController {
   async handleGetUserById(@Payload() userId: string) {
     return this.usersService.findByIdSafe(userId);
   }
+
+  @MessagePattern('get_all_users')
+  async handleGetAllUsers() {
+    return this.usersService.findAllSafe();
+  }
 }

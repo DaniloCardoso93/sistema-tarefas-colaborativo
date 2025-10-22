@@ -35,6 +35,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { type Task } from "./task-columns";
+import { UserMultiSelect } from "./user-multi-select";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -54,6 +55,7 @@ export function CreateTaskModal({
       description: "",
       priority: "MEDIUM",
       status: "TODO",
+      assigneeIds: [],
     },
   });
 
@@ -186,6 +188,22 @@ export function CreateTaskModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="assigneeIds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuir a</FormLabel>
+                  <FormControl>
+                    <UserMultiSelect
+                      selectedUserIds={field.value || []}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

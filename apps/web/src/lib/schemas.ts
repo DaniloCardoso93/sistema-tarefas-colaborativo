@@ -35,6 +35,7 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   priority: taskPriorityEnum.optional(),
   status: taskStatusEnum.optional(),
+  assigneeIds: z.array(z.string().uuid()).optional(),
 });
 
 export const createCommentSchema = z.object({

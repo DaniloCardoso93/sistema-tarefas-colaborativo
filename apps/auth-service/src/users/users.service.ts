@@ -56,4 +56,12 @@ export class UsersService {
     const { password_hash, ...result } = user;
     return result;
   }
+
+  async findAllSafe(): Promise<Omit<User, 'password_hash'>[]> {
+    const users = await this.usersRepository.find();
+    return users.map((user) => {
+      const { password_hash, ...result } = user;
+      return result;
+    });
+  }
 }
