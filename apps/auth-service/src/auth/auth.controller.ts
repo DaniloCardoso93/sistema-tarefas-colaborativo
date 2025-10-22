@@ -1,4 +1,3 @@
-// apps/auth-service/src/auth/auth.controller.ts
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthService } from './auth.service';

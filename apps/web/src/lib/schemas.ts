@@ -35,4 +35,9 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   priority: taskPriorityEnum.optional(),
   status: taskStatusEnum.optional(),
+  assigneeIds: z.array(z.string().uuid()).optional(),
+});
+
+export const createCommentSchema = z.object({
+  content: z.string().min(1, { message: "O comentário não pode estar vazio." }),
 });

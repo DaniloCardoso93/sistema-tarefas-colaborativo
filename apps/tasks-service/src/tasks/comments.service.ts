@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { Task } from './entities/task.entity';
+import { AuditLog } from './entities/audit-log.entity';
 
 @Injectable()
 export class CommentsService {
@@ -12,6 +13,8 @@ export class CommentsService {
     private commentsRepository: Repository<Comment>,
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,
+    @InjectRepository(AuditLog)
+    private auditLogRepository: Repository<AuditLog>,
   ) {}
 
   async create(createCommentDto: CreateCommentDto): Promise<Comment> {
@@ -26,6 +29,14 @@ export class CommentsService {
     }
 
     const newComment = this.commentsRepository.create(createCommentDto);
+    const savedComment = await this.commentsRepository.save(newComment);
+    const auditLog = this.auditLogRepository.create({
+      taskId: savedComment.taskId,
+      userId: savedComment.userId,
+      action: 'COMMENT_ADDED',
+      details: { newValue: savedComment.content.substring(0, 50) + '...' },
+    });
+    await this.auditLogRepository.save(auditLog);
     return this.commentsRepository.save(newComment);
   }
 

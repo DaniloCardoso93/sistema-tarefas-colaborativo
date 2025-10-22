@@ -29,7 +29,7 @@ export class AuditLog {
     newValue?: string;
   };
 
-  @ManyToOne(() => Task, (task) => task.auditLogs)
+  @ManyToOne(() => Task, (task) => task.auditLogs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'taskId' })
   task: Task;
 

@@ -16,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import {
   createTaskSchema,
@@ -34,70 +34,73 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { type Task } from "./task-columns";
+import { useAuthStore } from "@/lib/store";
+import React from "react";
 import { UserMultiSelect } from "./user-multi-select";
+import { type Assignee } from "./task-columns";
 
-interface CreateTaskModalProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onTaskCreated: (newTask: Task) => void;
-}
+const translateStatus = (status: string) => {
+  const map = {
+    TODO: "A Fazer",
+    IN_PROGRESS: "Em Progresso",
+    REVIEW: "Em Revisão",
+    DONE: "Concluída",
+  };
+  return map[status as keyof typeof map] || status;
+};
 
-export function CreateTaskModal({
-  isOpen,
-  onOpenChange,
-  onTaskCreated,
-}: CreateTaskModalProps) {
+const translatePriority = (priority: string) => {
+  const map = {
+    LOW: "Baixa",
+    MEDIUM: "Média",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+  };
+  return map[priority as keyof typeof map] || priority;
+};
+
+export function EditTaskModal() {
+  const { isEditModalOpen, selectedTask, closeModals } = useAuthStore();
+
   const form = useForm<z.infer<typeof createTaskSchema>>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      priority: "MEDIUM",
-      status: "TODO",
       assigneeIds: [],
     },
   });
 
-  const translateStatus = (status: string) => {
-    const map = {
-      TODO: "A Fazer",
-      IN_PROGRESS: "Em Progresso",
-      REVIEW: "Em Revisão",
-      DONE: "Concluída",
-    };
-    return map[status as keyof typeof map] || status;
-  };
-
-  const translatePriority = (priority: string) => {
-    const map = {
-      LOW: "Baixa",
-      MEDIUM: "Média",
-      HIGH: "Alta",
-      URGENT: "Urgente",
-    };
-    return map[priority as keyof typeof map] || priority;
-  };
+  React.useEffect(() => {
+    if (selectedTask) {
+      form.reset({
+        title: selectedTask.title,
+        description: selectedTask.description || "",
+        priority: selectedTask.priority,
+        status: selectedTask.status,
+        assigneeIds: selectedTask.assignees.map((a: Assignee) => a.userId),
+      });
+    }
+  }, [selectedTask, form, isEditModalOpen]);
 
   async function onSubmit(values: z.infer<typeof createTaskSchema>) {
+    if (!selectedTask) return;
     try {
-      const response = await api.post("/api/tasks", values);
-      toast.success("Tarefa criada com sucesso!");
-      onTaskCreated(response.data);
-      onOpenChange(false);
+      await api.patch(`/api/tasks/${selectedTask.id}`, values);
+      toast.success("Tarefa atualizada com sucesso!");
+      closeModals();
       form.reset();
-    } catch (erro) {
-      if (erro) toast.error("Falha ao criar tarefa.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Falha ao atualizar tarefa.");
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isEditModalOpen} onOpenChange={closeModals}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar Nova Tarefa</DialogTitle>
+          <DialogTitle>Editar Tarefa</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes da sua nova tarefa.
+            Modifique os detalhes da sua tarefa.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -112,10 +115,7 @@ export function CreateTaskModal({
                 <FormItem>
                   <FormLabel>Título</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Ex: Implementar autenticação"
-                      {...field}
-                    />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,10 +128,7 @@ export function CreateTaskModal({
                 <FormItem>
                   <FormLabel>Descrição (Opcional)</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Ex: Usar JWT e Passport.js..."
-                      {...field}
-                    />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,13 +140,10 @@ export function CreateTaskModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um status" />
+                        <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -170,14 +164,10 @@ export function CreateTaskModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Prioridade</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    {" "}
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma prioridade" />
+                        <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -208,13 +198,14 @@ export function CreateTaskModal({
                 </FormItem>
               )}
             />
-
             <Button
               type="submit"
               className="w-full"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? "Criando..." : "Criar Tarefa"}
+              {form.formState.isSubmitting
+                ? "Salvando..."
+                : "Salvar Alterações"}
             </Button>
           </form>
         </Form>

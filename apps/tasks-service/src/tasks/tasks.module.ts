@@ -8,10 +8,12 @@ import { Task } from './entities/task.entity';
 import { Comment } from './entities/comment.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { CommentsService } from './comments.service';
+import { CommentsController } from './comments.controller';
+import { TaskAssignee } from './entities/task-assignee.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Comment, AuditLog]),
+    TypeOrmModule.forFeature([Task, Comment, AuditLog, TaskAssignee]),
     ClientsModule.registerAsync([
       {
         name: 'NOTIFICATIONS_SERVICE',
@@ -30,7 +32,7 @@ import { CommentsService } from './comments.service';
       },
     ]),
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, CommentsController],
   providers: [TasksService, CommentsService],
   exports: [TasksService, CommentsService],
 })

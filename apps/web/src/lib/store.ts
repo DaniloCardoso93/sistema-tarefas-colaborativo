@@ -1,3 +1,4 @@
+import { type Task } from "@/components/tasks/task-columns";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -7,6 +8,15 @@ interface AuthState {
   isLoggedIn: () => boolean;
   login: (tokens: { accessToken: string; refreshToken: string }) => void;
   logout: () => void;
+  selectedTask: Task | null;
+  isDeleteModalOpen: boolean;
+  isEditModalOpen: boolean;
+  isDetailsModalOpen: boolean;
+
+  openDeleteModal: (task: Task) => void;
+  openEditModal: (task: Task) => void;
+  openDetailsModal: (task: Task) => void;
+  closeModals: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -27,10 +37,31 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
         });
       },
+      selectedTask: null,
+      isDeleteModalOpen: false,
+      isEditModalOpen: false,
+      isDetailsModalOpen: false,
+      openDeleteModal: (task: Task) =>
+        set({ isDeleteModalOpen: true, selectedTask: task }),
+      openEditModal: (task: Task) =>
+        set({ isEditModalOpen: true, selectedTask: task }),
+      openDetailsModal: (task: Task) =>
+        set({ isDetailsModalOpen: true, selectedTask: task }),
+      closeModals: () =>
+        set({
+          isDeleteModalOpen: false,
+          isEditModalOpen: false,
+          isDetailsModalOpen: false,
+          selectedTask: null,
+        }),
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
     }
   )
 );

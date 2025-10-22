@@ -47,4 +47,21 @@ export class UsersService {
   async findById(id: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });
   }
+
+  async findByIdSafe(id: string): Promise<Omit<User, 'password_hash'>> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    const { password_hash, ...result } = user;
+    return result;
+  }
+
+  async findAllSafe(): Promise<Omit<User, 'password_hash'>[]> {
+    const users = await this.usersRepository.find();
+    return users.map((user) => {
+      const { password_hash, ...result } = user;
+      return result;
+    });
+  }
 }
