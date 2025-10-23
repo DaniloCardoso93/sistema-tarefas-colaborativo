@@ -1,4 +1,3 @@
-// apps/auth-service/src/http-exception.filter.ts
 import { Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { throwError } from 'rxjs';

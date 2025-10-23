@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Este é o tema CLARO (light mode) */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -28,7 +27,6 @@
   }
 
   .dark {
-    /* Este é o tema ESCURO (dark mode) "Slate" */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -51,13 +49,11 @@
   }
 }
 
-/* Esta é a SEGUNDA parte do @layer base, que agora está junta e correta */
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    /* Esta é a linha que aplica a cor de fundo */
     @apply bg-background text-foreground;
   }
 }
