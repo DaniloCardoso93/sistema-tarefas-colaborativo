@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { NotificationsController } from './notifications.controller';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '../../.env',
+    }),
+  ],
+  controllers: [NotificationsController],
+  providers: [NotificationsGateway],
 })
 export class AppModule {}
